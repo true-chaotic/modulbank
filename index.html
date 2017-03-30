@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ru">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title></title>
+
+        <!-- Bootstrap -->
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+        <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+        <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+        <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+        <![endif]-->
+    </head>
+    <body>
+        <br />
+        <div class="container js-content">
+            <p class="text-center">Загрузка модели.</p>
+        </div>
+
+        <script id="phonelist" type="text/x-jsrender">
+            <section class="js-phones">
+                <h2>Телефоны</h2>
+                <ul class="list-unstyled">
+                    {{for}}
+                        {{if Status === 'действующий' }}
+                            <li style="text-indent: -0.5em;">
+                                <a href="tel:+7{{> Code }}{{> Number }}" class="js-phones__phone js-phones__phone_active lead">+7 {{> Code }} {{> ~splitPhone(Number) }}</a>
+                                <span class="label label-success js-phones__phone_label hide" style="vertical-align: middle; position: relative; top: -3px;">действующий</span>
+                            </li>
+                        {{/if}}
+                    {{/for}}
+                    {{for}}
+                        {{if Status !== 'действующий' }}
+                            <li style="text-indent: -0.5em;"><a href="tel:+7{{> Code }}{{> Number }}" class="js-phones__phone hide js-phones__phone_inactive lead">+7 {{> Code }} {{> ~splitPhone(Number) }}</a></li>
+                        {{/if}}
+                    {{/for}}
+                </ul>
+                <button type="button" class="btn btn-default js-phones__toggle">
+                    <span class="js-phones__toggleShow">
+                        <span class="glyphicon glyphicon-eye-open"></span> Показать все {{: length}}
+                    </span>
+                    <span class="js-phones__toggleHide hide">
+                        <span class="glyphicon glyphicon-eye-close"></span> Оставить только действующие
+                    </span>
+                </button>
+            </section>
+        </script>
+
+        <script id="address" type="text/x-jsrender">
+            {{> PostCode}}, {{> Address}}
+        </script>
+
+        <script id="company" type="text/x-jsrender">
+            <div class="row">
+                <div class="col-md-8">
+                    <header>
+                        <h1 class="js-title">{{> ~typo(ShortNameRus) }}</h1>
+                        <p class="text-muted">{{> ~typo(FullNameRus) }}  {{if ~isTrue(IsActing) }}<span class="label label-success">Действует</span>{{/if }}</p>
+                    <header>
+
+                    <h2>Риски</h2>
+
+                    {{if CreditRisk ~risk = ~clean(CreditRisk) }}
+                    <p>
+                        <b>Кредит</b>: <span class="{{if ~risk.CreditRiskValue > 60 }}text-danger{{else ~risk.CreditRiskValue > 30 }}text-warning{{/if }}">{{> ~risk.CreditRiskDesc}}<span>
+                    </p>
+                    {{/if }}
+
+                    {{if FailureScore ~risk = ~clean(FailureScore) }}
+                    <p>
+                        <b>Счет неудач<sup>1</sup></b>: <span class="{{if ~risk.FailureScoreValue > 60 }}text-danger{{else ~risk.FailureScoreValue > 30 }}text-warning{{/if }}">{{> ~risk.FailureScoreDesc}}<span>
+                    </p>
+                    {{/if }}
+
+                    {{if PaymentIndex ~risk = ~clean(PaymentIndex) }}
+                    <p>
+                        <span class="{{if ~risk.PaymentIndexValue < 30 }}text-danger{{else ~risk.PaymentIndexValue < 60 }}text-warning{{/if }}">{{> ~risk.PaymentIndexDesc}}<span>
+                    </p>
+                    {{/if }}
+
+                    <h2>Данные о компании</h2>
+                    {{if LegalAddresses.Address}}
+                    <p>
+                        <b>Юридический адрес</b>: {{include ~clean(LegalAddresses.Address) tmpl="#address" /}}
+                    </p>
+                    {{/if }}
+                    {{if AdjustAddress }}
+                    <p>
+                        <b>Фактический адрес</b>: {{include ~clean(AdjustAddress) tmpl="#address" /}}
+                    </p>
+                    {{/if }}
+
+                    {{if LeaderList && LeaderList.length > 0 ~leaders = ~clean(LeaderList) }}
+                        <h3>Руководители</h3>
+                        <ul class="list-unstyled">
+                        {{for ~leaders }}
+                            <li><strong>{{> FIO }}</strong> {{> Position}}{{if INN }}, ИНН: <code>{{> INN }}</code>{{/if }}</li>
+                        {{/for }}
+                        </ul>
+                    {{/if }}
+                </div>
+                <div class="col-md-4">
+                {{if PhoneList && PhoneList.length > 0 }}
+                    {{include ~clean(PhoneList) tmpl="#phonelist" /}}
+                {{/if }}
+
+                <div class="hide">
+                    {{!-- Остальные данные, для отладки --}}
+                    {{props}}
+                      <p>{{>key}}: {{>prop}}</p>
+                    {{/props}}
+                    </div>
+                </div>
+            </div>
+            <br />
+            <p class="text-muted"><small><sup>1</sup> &mdash; знать бы еще что это</small></p>
+        </script>
+
+        <script id="error" type="text/x-jsrender">
+            <div class="panel panel-danger">
+                <div class="panel-heading">
+                    <h3 class="panel-title js-title">Ошибка</h3>
+                </div>
+                <div class="panel-body">
+                    <p>{{> ErrorText }}</p>
+                    <p><button class="btn btn-default js-refresh" type="submit"><span class="glyphicon glyphicon-refresh" aria-hidden="true"></span> Обновить страницу</button></p>
+                </div>
+            </div>
+        </script>
+
+        <script id="init" type="text/x-jsrender">
+            {{if ~isTrue(ResultInfo['@ResultType'])}}
+                {{include Data.Report tmpl="#company" /}}
+            {{else}}
+                {{include ~clean(ResultInfo) tmpl="#error" /}}
+            {{/if}}
+        </script>
+
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jsrender/0.9.84/jsrender.min.js"></script>
+        <script src="https://typograf.github.io/build/typograf.js"></script>
+        <script src="app.js"></script>
+    </body>
+</html>
